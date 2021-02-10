@@ -7,13 +7,19 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) gd \
     && apt-get install -y git apt-utils zip unzip nodejs npm
     
-RUN npm intall n -g
+
+RUN npm install -g n
 RUN n stable
+RUN npm update -g npm
 
 RUN apt purge -y nodejs npm
 
 #Composer install
-COPY --from=composer /usr/bin/composer /usr/bin/composer
+RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+RUN php composer-setup.php
+RUN mv composer.phar /usr/local/bin/composer
+RUN php -r "unlink('composer-setup.php');"
+
 
 #PATH
 ENV COMPOSER_ALLOW_SUPERUSER 1
