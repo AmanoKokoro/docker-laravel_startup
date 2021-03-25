@@ -1,36 +1,30 @@
-version: '3'
+FROM php:7.4-fpm
+RUN apt-get update && apt-get install -y \
+        libfreetype6-dev \
+        libjpeg62-turbo-dev \
+        libpng-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-install pdo_mysql \
+    && apt-get install -y git apt-utils zip unzip nodejs npm curl
+    
+        
+RUN npm install n -g
+RUN n stable
 
-services:
-  php:
-    container_name: php-startup-sample
-    build: ./docker/php
-    volumes:
-    - ./server:/var/www
+RUN apt purge -y nodejs npm
 
-  nginx:
-    image: nginx
-    container_name: nginx-sample
-    ports:
-    - 80:80
-    volumes:
-    - ./server:/var/www
-    - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-    - php
+#Composer install
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer \
+    && composer self-update
 
-  db:
-    image: mysql:5.7
-    container_name: db-sample
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: database
-      MYSQL_USER: docker
-      MYSQL_PASSWORD: docker
-      TZ: 'Asia/Tokyo'
-    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    volumes:
-    - ./docker/db/data:/var/lib/mysql
-    - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
-    - ./docker/db/sql:/docker-entrypoint-initdb.d
-    ports:
-    - 3306:3306
+#PATH
+ENV COMPOSER_ALLOW_SUPERUSER 1
+ENV COMPOSER_HOME /composer
+ENV PATH $PATH:/composer/vendor/bin
+
+ENV ll='ls -al'
+
+WORKDIR /var/www
+RUN composer global require "laravel/installer"
