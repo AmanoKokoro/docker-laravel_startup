@@ -5,21 +5,19 @@ RUN apt-get update && apt-get install -y \
         libpng-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd \
-    && apt-get install -y git apt-utils zip unzip nodejs npm
+    && docker-php-ext-install pdo_mysql \
+    && apt-get install -y git apt-utils zip unzip nodejs npm curl
     
-
-RUN npm install -g n
+        
+RUN npm install n -g
 RUN n stable
-RUN npm update -g npm
 
 RUN apt purge -y nodejs npm
 
 #Composer install
-RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-RUN php composer-setup.php
-RUN mv composer.phar /usr/local/bin/composer
-RUN php -r "unlink('composer-setup.php');"
-
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer \
+    && composer self-update
 
 #PATH
 ENV COMPOSER_ALLOW_SUPERUSER 1
